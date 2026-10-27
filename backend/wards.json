@@ -1,0 +1,82 @@
+{
+  "_note": "Zones and officer contact details across the Ghaziabad & Duhai region. Lat/lng are zone centers used for nearest-ward assignment from GPS coordinates.",
+  "wards": [
+    {
+      "name": "Zone 1 (Duhai Village)",
+      "lat": 28.7304,
+      "lng": 77.4759,
+      "officer": "Zone 1 Officer",
+      "email": "zone1.officer@example.org"
+    },
+    {
+      "name": "Zone 2 (Duhai RRTS Station)",
+      "lat": 28.7273,
+      "lng": 77.4718,
+      "officer": "Zone 2 Officer",
+      "email": "zone2.officer@example.org"
+    },
+    {
+      "name": "Zone 3 (North Duhai)",
+      "lat": 28.742,
+      "lng": 77.473,
+      "officer": "Zone 3 Officer",
+      "email": "zone3.officer@example.org"
+    },
+    {
+      "name": "Zone 4 (South Duhai)",
+      "lat": 28.713,
+      "lng": 77.473,
+      "officer": "Zone 4 Officer",
+      "email": "zone4.officer@example.org"
+    },
+    {
+      "name": "Zone 5 (East Duhai)",
+      "lat": 28.729,
+      "lng": 77.493,
+      "officer": "Zone 5 Officer",
+      "email": "zone5.officer@example.org"
+    },
+    {
+      "name": "Zone 6 (West Duhai)",
+      "lat": 28.729,
+      "lng": 77.455,
+      "officer": "Zone 6 Officer",
+      "email": "zone6.officer@example.org"
+    },
+    {
+      "name": "Zone 7 (Raj Nagar / Sanjay Nagar)",
+      "lat": 28.6860,
+      "lng": 77.4420,
+      "officer": "Zone 7 Officer",
+      "email": "zone7.officer@example.org"
+    },
+    {
+      "name": "Zone 8 (Kavi Nagar / Govindpuram)",
+      "lat": 28.6670,
+      "lng": 77.4650,
+      "officer": "Zone 8 Officer",
+      "email": "zone8.officer@example.org"
+    },
+    {
+      "name": "Zone 9 (Mohan Nagar / Sahibabad)",
+      "lat": 28.6750,
+      "lng": 77.3680,
+      "officer": "Zone 9 Officer",
+      "email": "zone9.officer@example.org"
+    },
+    {
+      "name": "Zone 10 (Indirapuram / Crossings)",
+      "lat": 28.6350,
+      "lng": 77.3750,
+      "officer": "Zone 10 Officer",
+      "email": "zone10.officer@example.org"
+    },
+    {
+      "name": "Zone 11 (Muradnagar / Morta)",
+      "lat": 28.7750,
+      "lng": 77.5020,
+      "officer": "Zone 11 Officer",
+      "email": "zone11.officer@example.org"
+    }
+  ]
+}
