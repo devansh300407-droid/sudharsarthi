@@ -22,6 +22,7 @@ Citizen Authentication & Dashboard Endpoints:
   GET   /api/citizen/reports         Authenticated citizen's own submitted reports
 """
 import base64
+import math
 import os
 import re
 import threading
@@ -198,6 +199,8 @@ def num(value, name, lo, hi):
         v = float(value)
     except (TypeError, ValueError):
         raise ValueError(f"'{name}' is required and must be a number.")
+    if math.isnan(v) or math.isinf(v):
+        raise ValueError(f"'{name}' must be a valid finite number.")
     if not lo <= v <= hi:
         raise ValueError(f"'{name}' must be between {lo} and {hi}.")
     return v

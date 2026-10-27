@@ -8,6 +8,7 @@ Kavi Nagar, Mohan Nagar, Sahibabad, Indirapuram, and Crossings Republik.
 All coordinates are configurable via environment variables if custom
 boundaries are needed for other municipal deployments.
 """
+import math
 import os
 
 AREA_NAME = os.environ.get("SERVICE_AREA_NAME", "Ghaziabad & Duhai Region")
@@ -33,6 +34,8 @@ def inside(lat, lng):
         lat = float(lat)
         lng = float(lng)
     except (TypeError, ValueError):
+        return False
+    if math.isnan(lat) or math.isinf(lat) or math.isnan(lng) or math.isinf(lng):
         return False
     s, w, n, e = BOUNDS
     return s <= lat <= n and w <= lng <= e

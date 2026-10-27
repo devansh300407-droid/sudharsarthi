@@ -324,6 +324,7 @@ main {
   display: grid;
   grid-template-columns: 390px 1fr;
   overflow: hidden;
+  height: 100%;
 }
 
 /* =====================================================================
@@ -337,6 +338,21 @@ main {
   height: 100%;
   z-index: 10;
   overflow: hidden;
+  position: relative;
+}
+
+/* Mobile Drawer Pull Tab */
+.map-drawer-handle {
+  display: none;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  user-select: none;
 }
 
 .map-sidebar-header {
@@ -521,12 +537,17 @@ main {
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  background: #e2e8f0;
 }
 
 #map {
   width: 100%;
   height: 100%;
-  background: #e5e7eb;
+  min-height: 420px;
+  background: #e2e8f0;
+  outline: none;
+  z-index: 1;
 }
 
 /* QUICK LOCATION SHORTCUTS BAR */
@@ -539,8 +560,8 @@ main {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding: 4px 6px;
-  background: rgba(255, 255, 255, 0.92);
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: var(--radius);
@@ -602,6 +623,8 @@ main {
   font-size: 18px;
   cursor: pointer;
   transition: all 0.18s ease;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .map-action-fab:hover {
@@ -631,11 +654,11 @@ main {
 /* MAP SELECTION BANNER */
 .picking-banner {
   position: absolute;
-  top: 70px;
+  top: 72px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 600;
-  background: #1e293b;
+  background: #0f172a;
   color: #fff;
   padding: 8px 18px;
   border-radius: var(--radius-full);
@@ -646,6 +669,8 @@ main {
   align-items: center;
   gap: 12px;
   animation: slideDown 0.25s ease;
+  max-width: 90%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .picking-banner button {
@@ -662,6 +687,97 @@ main {
 @keyframes slideDown {
   from { opacity: 0; transform: translate(-50%, -15px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* MAP LEGEND */
+.map-legend {
+  position: absolute;
+  bottom: 24px;
+  left: 14px;
+  z-index: 500;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-size: 11px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.map-legend-title {
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+  font-size: 11.5px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-secondary);
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+/* CUSTOM SELECTION MARKER (PULSE PIN) */
+.picked-pin-wrapper {
+  position: relative;
+  width: 32px;
+  height: 32px;
+}
+
+.picked-pin-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: rgba(13, 148, 136, 0.35);
+  animation: pinPulse 2s infinite ease-out;
+}
+
+.picked-pin-core {
+  position: absolute;
+  inset: 0;
+  background: #0d9488;
+  border: 3px solid #ffffff;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.picked-pin-core::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  transform: rotate(45deg);
+}
+
+@keyframes pinPulse {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* USER GPS PIN */
+.user-gps-dot {
+  width: 18px;
+  height: 18px;
+  background: #2563eb;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.6);
 }
 
 /* =====================================================================
@@ -898,7 +1014,7 @@ textarea.form-control {
   margin-bottom: 6px;
 }
 
-/* LOCATION SELECTION BUTTONS */
+/* LOCATION SELECTION BUTTONS & COORDINATE INPUTS */
 .location-btn-row {
   display: flex;
   gap: 8px;
@@ -936,10 +1052,10 @@ textarea.form-control {
 }
 
 .coords-badge {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  justify-content: space-between;
+  padding: 8px 12px;
   background: #f1f5f9;
   border-radius: var(--radius-sm);
   font-family: monospace;
@@ -948,6 +1064,43 @@ textarea.form-control {
   border: 1px solid var(--border);
   margin-bottom: 12px;
   width: 100%;
+}
+
+.coords-badge.selected {
+  background: var(--teal-subtle);
+  border-color: #99f6e4;
+  color: var(--teal-dark);
+}
+
+.btn-clear-coords {
+  background: transparent;
+  border: 0;
+  color: var(--high);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-clear-coords:hover {
+  background: var(--high-bg);
+}
+
+/* MANUAL COORDINATES GRID */
+.coords-input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.coords-subfield label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mut);
+  margin-bottom: 3px;
 }
 
 .submit-section {
@@ -1171,7 +1324,7 @@ textarea.form-control {
 
 /* =====================================================================
    TAB 4: CITY ANALYTICS
-   ===================================================================== */
+   ==================================================================== */
 .analytics-container {
   max-width: 1080px;
   margin: 24px auto;
@@ -1450,6 +1603,11 @@ textarea.form-control {
   #tab-map.active {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
+    position: relative;
+  }
+
+  .map-drawer-handle {
+    display: block;
   }
 
   .map-sidebar {
@@ -1457,20 +1615,30 @@ textarea.form-control {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 48%;
+    height: 52%;
     border-right: 0;
     border-top: 2px solid var(--border);
     box-shadow: var(--shadow-lg);
-    transition: transform 0.25s ease;
-    border-radius: 16px 16px 0 0;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 18px 18px 0 0;
+    z-index: 550;
   }
 
   .map-sidebar.collapsed {
-    transform: translateY(calc(100% - 50px));
+    transform: translateY(calc(100% - 44px));
+  }
+
+  .map-sidebar.collapsed .map-sidebar-list,
+  .map-sidebar.collapsed .map-sidebar-header {
+    pointer-events: none;
   }
 
   .flow-form-grid, .analytics-grid-2col {
     grid-template-columns: 1fr;
+  }
+
+  .map-legend {
+    display: none;
   }
 }
 
@@ -1599,6 +1767,11 @@ textarea.form-control {
   <!-- TAB 1: INTERACTIVE MAP & EXPLORER -->
   <section id="tab-map" class="tab-content active">
     <aside class="map-sidebar" id="map-sidebar">
+      <!-- Mobile Drawer Pull Handle -->
+      <div class="map-drawer-handle" id="map-drawer-handle" onclick="toggleMapDrawer()">
+        <span id="map-drawer-handle-text">▲ View Reports List (<span id="drawer-reports-count">0</span>)</span>
+      </div>
+
       <div class="map-sidebar-header">
         <div class="search-box">
           <span class="icon">🔍</span>
@@ -1626,20 +1799,32 @@ textarea.form-control {
         <button class="quick-loc-btn" onclick="flyToQuickLocation('indirapuram', this)">🛣️ Indirapuram / NH9</button>
         <button class="quick-loc-btn" onclick="flyToQuickLocation('mohannagar', this)">🏭 Mohan Nagar / Sahibabad</button>
         <button class="quick-loc-btn" onclick="flyToQuickLocation('muradnagar', this)">🌾 Muradnagar</button>
+        <button class="quick-loc-btn" onclick="flyToQuickLocation('govindpuram', this)">🏡 Govindpuram</button>
+        <button class="quick-loc-btn" onclick="flyToQuickLocation('sanjaynagar', this)">🏥 Sanjay Nagar</button>
       </div>
 
       <!-- Map Element -->
       <div id="map"></div>
 
+      <!-- Map Legend Control -->
+      <div class="map-legend">
+        <div class="map-legend-title">Hazard Priority Legend</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#dc2626;"></div> High Urgency / Critical (60+)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d97706;"></div> Medium Urgency (40 - 59)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#16a34a;"></div> Low Urgency (&lt; 40)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#475569;"></div> Resolved Work</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#0d9488;"></div> Selected Report Location (Draggable)</div>
+      </div>
+
       <!-- Picking Mode Banner -->
       <div class="picking-banner" id="map-picking-banner" style="display:none;">
-        <span>🎯 Tap/click anywhere on the map to set the civic issue location</span>
-        <button onclick="cancelPickingMode()">Cancel</button>
+        <span id="picking-banner-text">🎯 Tap anywhere inside the boundary to place the incident pin</span>
+        <button onclick="cancelPickingMode()">Done / Return</button>
       </div>
 
       <!-- Floating Action Buttons -->
       <div class="map-floating-controls">
-        <button class="map-action-fab" onclick="useCurrentGPS()" title="Use My Current GPS Location">🎯</button>
+        <button class="map-action-fab" id="btn-map-gps" onclick="useCurrentGPS()" title="Use My Current GPS Location">🎯</button>
         <button class="map-action-fab" onclick="toggleSatelliteView()" title="Toggle Satellite Imagery">🛰️</button>
         <button class="map-action-fab" onclick="resetMapBounds()" title="Reset to Full Service Region">🔄</button>
         <button class="map-action-fab btn-report-fab" onclick="switchTab('report')">➕ Report Issue</button>
@@ -1701,7 +1886,7 @@ textarea.form-control {
             </div>
 
             <div class="form-group">
-              <label class="form-label">Upload Photo (Mobile Camera or File) <span class="req">*</span></label>
+              <label class="form-label">Upload Photo (Mobile Camera or File)</label>
               <div class="photo-dropzone" onclick="document.getElementById('photo-input').click()">
                 <div style="font-size:28px; margin-bottom:4px;">📷</div>
                 <b style="font-size:13.5px; color:var(--primary);">Tap to capture or choose photo</b>
@@ -1731,16 +1916,30 @@ textarea.form-control {
             <div class="form-group">
               <label class="form-label">Set Incident Location <span class="req">*</span></label>
               <div class="location-btn-row">
-                <button type="button" class="btn-loc-picker" onclick="useCurrentGPS()">
+                <button type="button" class="btn-loc-picker" id="btn-form-gps" onclick="useCurrentGPS()">
                   <span>🎯</span> Use My GPS
                 </button>
                 <button type="button" class="btn-loc-picker" onclick="pickLocationOnMap()">
                   <span>🗺️</span> Pick on Map
                 </button>
               </div>
+
+              <!-- Location Status Badge with Clear Action -->
               <div class="coords-badge" id="coords-badge">
-                <span>📌</span>
-                <span id="coords-text">No location picked. Tap map or GPS.</span>
+                <span id="coords-text">⚠️ No location chosen yet. Tap the map or use GPS.</span>
+                <button type="button" class="btn-clear-coords" id="btn-clear-coords" style="display:none;" onclick="clearSelectedLocation()">✕ Clear Pin</button>
+              </div>
+
+              <!-- Manual Numerical Coordinates Synchronization -->
+              <div class="coords-input-grid">
+                <div class="coords-subfield">
+                  <label for="report-lat-input">Latitude (°N)</label>
+                  <input type="number" id="report-lat-input" class="form-control" step="0.00001" min="-90" max="90" placeholder="e.g. 28.69500" oninput="handleManualCoordInput()">
+                </div>
+                <div class="coords-subfield">
+                  <label for="report-lng-input">Longitude (°E)</label>
+                  <input type="number" id="report-lng-input" class="form-control" step="0.00001" min="-180" max="180" placeholder="e.g. 77.44500" oninput="handleManualCoordInput()">
+                </div>
               </div>
               <input type="hidden" id="report-lat" required>
               <input type="hidden" id="report-lng" required>
@@ -2098,7 +2297,7 @@ textarea.form-control {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <script>
-/* Smart Backend Resolver: Supports local Flask, Render backend, or Vercel rewrites */
+/* Smart Backend Resolver */
 let API = (function() {
   const urlParam = new URLSearchParams(window.location.search).get('backend');
   if (urlParam) {
@@ -2115,9 +2314,9 @@ let API = (function() {
   return '';
 })();
 
-// Expanded Region Defaults (Ghaziabad & Duhai Metropolitan Service Boundary)
+// Authoritative Fallback Coordinates (Ghaziabad & Duhai Region)
 const DEFAULT_CENTER = [28.6950, 77.4450];
-const DEFAULT_BOUNDS = [[28.5800, 77.3300], [28.8200, 77.5600]];
+const DEFAULT_BOUNDS = [28.5800, 77.3300, 28.8200, 77.5600];
 
 const COLORS = {
   High: '#dc2626',
@@ -2136,16 +2335,32 @@ const CATEGORY_ICONS = {
   'Other': '❓'
 };
 
+// Verified Area Shortcut Coordinates (All inside Ghaziabad & Duhai Service Boundary)
+const SHORTCUT_COORDINATES = {
+  'center':      { lat: 28.6692, lng: 77.4370, zoom: 14, label: 'Ghaziabad Central' },
+  'duhai':       { lat: 28.7285, lng: 77.4740, zoom: 15, label: 'Duhai RRTS Hub' },
+  'rajnagar':    { lat: 28.6860, lng: 77.4420, zoom: 15, label: 'Raj Nagar / ALT' },
+  'indirapuram': { lat: 28.6350, lng: 77.3750, zoom: 15, label: 'Indirapuram / NH9' },
+  'mohannagar':  { lat: 28.6750, lng: 77.3680, zoom: 15, label: 'Mohan Nagar / Sahibabad' },
+  'muradnagar':  { lat: 28.7750, lng: 77.5020, zoom: 15, label: 'Muradnagar' },
+  'govindpuram': { lat: 28.6670, lng: 77.4850, zoom: 15, label: 'Govindpuram' },
+  'sanjaynagar': { lat: 28.6850, lng: 77.4560, zoom: 15, label: 'Sanjay Nagar' }
+};
+
 let map = null;
 let tileLayerOsm = null;
 let tileLayerSat = null;
 let isSatellite = false;
 let boundaryPolygon = null;
 
+let reportsLayerGroup = null;
+let selectionMarker = null;
+let userLocationMarker = null;
+let userAccuracyCircle = null;
+
 let cfg = null;
 let reports = [];
 let myReports = [];
-let markers = {};
 let currentFilter = 'All';
 let currentSearch = '';
 let selectedReport = null;
@@ -2153,7 +2368,6 @@ let currentUser = null;
 
 let isPickingLocation = false;
 let pickedLocation = null;
-let pickMarker = null;
 
 let categoryChartInstance = null;
 let trendChartInstance = null;
@@ -2176,6 +2390,21 @@ function showToast(message, type = 'info') {
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ---------------------------------------------------------------------
+   SERVICE AREA BOUNDARY VALIDATION
+   --------------------------------------------------------------------- */
+function isInsideServiceArea(lat, lng) {
+  if (lat == null || lng == null) return false;
+  const numLat = parseFloat(lat);
+  const numLng = parseFloat(lng);
+  if (isNaN(numLat) || isNaN(numLng) || !isFinite(numLat) || !isFinite(numLng)) {
+    return false;
+  }
+  const b = (cfg && cfg.bounds) ? cfg.bounds : DEFAULT_BOUNDS;
+  const [s, w, n, e] = b;
+  return numLat >= s && numLat <= n && numLng >= w && numLng <= e;
+}
+
+/* ---------------------------------------------------------------------
    INITIALIZATION
    --------------------------------------------------------------------- */
 async function initApp() {
@@ -2186,17 +2415,18 @@ async function initApp() {
       document.getElementById('header-area-name').textContent = cfg.area;
     }
   } catch (err) {
-    console.warn('Backend API config fetch failed, using fallback:', err);
+    console.warn('Backend API config fetch failed, using authoritative defaults:', err);
     cfg = {
       area: 'Ghaziabad & Duhai Region',
       center: DEFAULT_CENTER,
-      bounds: [28.5800, 77.3300, 28.8200, 77.5600],
+      bounds: DEFAULT_BOUNDS,
       categories: ['Pothole', 'Road Crack', 'Surface Damage', 'Waterlogging', 'Fallen Tree', 'Garbage', 'Other'],
       wards: [
         'Zone 1 (Duhai Village)', 'Zone 2 (Duhai RRTS Station)', 'Zone 3 (North Duhai)',
         'Zone 4 (South Duhai)', 'Zone 5 (East Duhai)', 'Zone 6 (West Duhai)',
         'Zone 7 (Raj Nagar / Sanjay Nagar)', 'Zone 8 (Kavi Nagar / Govindpuram)',
-        'Zone 9 (Mohan Nagar / Sahibabad)', 'Zone 10 (Indirapuram / Crossings)'
+        'Zone 9 (Mohan Nagar / Sahibabad)', 'Zone 10 (Indirapuram / Crossings)',
+        'Zone 11 (Muradnagar / Morta)'
       ]
     };
   }
@@ -2214,6 +2444,762 @@ function checkUrlRouting() {
   if (['map', 'report', 'citizen', 'analytics', 'wards'].includes(hash)) {
     switchTab(hash, false);
   }
+}
+
+/* ---------------------------------------------------------------------
+   LEAFLET MAP INITIALIZATION & RESIZING
+   --------------------------------------------------------------------- */
+function initInteractiveMap() {
+  // Prevent duplicate initialization
+  if (map) return;
+
+  const b = (cfg && cfg.bounds) ? cfg.bounds : DEFAULT_BOUNDS;
+  const southWest = L.latLng(b[0], b[1]);
+  const northEast = L.latLng(b[2], b[3]);
+  const bounds = L.latLngBounds(southWest, northEast);
+
+  // Initialize Map exactly once with smooth panning and touch support
+  map = L.map('map', {
+    minZoom: 10,
+    maxZoom: 19,
+    maxBounds: bounds.pad(0.20),
+    maxBoundsViscosity: 0.25,
+    scrollWheelZoom: true,
+    tap: true,
+    touchZoom: true,
+    zoomControl: true
+  }).fitBounds(bounds, { padding: [25, 25] });
+
+  // Layer groups for clean marker lifecycle
+  reportsLayerGroup = L.layerGroup().addTo(map);
+
+  // Base Street Map Layer (OpenStreetMap)
+  tileLayerOsm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  tileLayerOsm.on('tileerror', function() {
+    console.warn('OpenStreetMap tile error encountered.');
+  });
+
+  // High-Resolution Satellite Layer (Esri)
+  tileLayerSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri World Imagery'
+  });
+
+  // Official Service Boundary Outline
+  boundaryPolygon = L.rectangle(bounds, {
+    color: '#0d9488',
+    weight: 2,
+    dashArray: '6, 6',
+    fillColor: '#0d9488',
+    fillOpacity: 0.04
+  }).addTo(map);
+
+  // Map Click Listener for Location Selection
+  map.on('click', function(e) {
+    handleMapClick(e.latlng.lat, e.latlng.lng);
+  });
+
+  // Modern ResizeObserver: Guarantees map tiles never clip or show grey areas
+  const mapContainer = document.getElementById('map');
+  if (window.ResizeObserver && mapContainer) {
+    const ro = new ResizeObserver(() => {
+      if (map) map.invalidateSize();
+    });
+    ro.observe(mapContainer);
+  }
+
+  window.addEventListener('resize', () => {
+    if (map) map.invalidateSize();
+  });
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => { if (map) map.invalidateSize(); }, 200);
+  });
+}
+
+function toggleSatelliteView() {
+  if (!map) return;
+  if (isSatellite) {
+    map.removeLayer(tileLayerSat);
+    map.addLayer(tileLayerOsm);
+    isSatellite = false;
+    showToast('Switched to Street Map', 'info');
+  } else {
+    map.removeLayer(tileLayerOsm);
+    map.addLayer(tileLayerSat);
+    isSatellite = true;
+    showToast('Switched to Satellite Imagery', 'info');
+  }
+}
+
+function resetMapBounds() {
+  if (!map) return;
+  const b = (cfg && cfg.bounds) ? cfg.bounds : DEFAULT_BOUNDS;
+  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: [25, 25] });
+  showToast('Map view reset to full Ghaziabad & Duhai region.', 'info');
+}
+
+/* ---------------------------------------------------------------------
+   LOCATION SELECTION & SYNCHRONIZATION
+   --------------------------------------------------------------------- */
+function handleMapClick(lat, lng) {
+  if (!isInsideServiceArea(lat, lng)) {
+    showToast(`📍 Selected point (${lat.toFixed(4)}, ${lng.toFixed(4)}) is outside the Ghaziabad & Duhai service area. Please choose a location within the highlighted municipal boundary.`, 'warning');
+    return;
+  }
+  updateSelectedLocation(lat, lng, false);
+}
+
+function updateSelectedLocation(lat, lng, panMap = false) {
+  const numLat = parseFloat(lat);
+  const numLng = parseFloat(lng);
+
+  if (isNaN(numLat) || isNaN(numLng) || !isFinite(numLat) || !isFinite(numLng)) {
+    return;
+  }
+
+  if (!isInsideServiceArea(numLat, numLng)) {
+    showToast('Coordinates fall outside our supported service area.', 'warning');
+    return;
+  }
+
+  pickedLocation = { lat: numLat, lng: numLng };
+
+  // Update hidden form fields
+  document.getElementById('report-lat').value = numLat.toFixed(5);
+  document.getElementById('report-lng').value = numLng.toFixed(5);
+
+  // Update visible coordinate inputs
+  document.getElementById('report-lat-input').value = numLat.toFixed(5);
+  document.getElementById('report-lng-input').value = numLng.toFixed(5);
+
+  // Update status badge
+  const coordsBadge = document.getElementById('coords-badge');
+  const coordsText = document.getElementById('coords-text');
+  const btnClear = document.getElementById('btn-clear-coords');
+
+  coordsBadge.classList.add('selected');
+  coordsText.innerHTML = `📍 <b>Selected:</b> ${numLat.toFixed(5)}, ${numLng.toFixed(5)} <span style="color:#0f766e;">(Verified)</span>`;
+  btnClear.style.display = 'inline-block';
+
+  // Manage Leaflet selection marker
+  if (!selectionMarker) {
+    const icon = L.divIcon({
+      className: 'picked-pin-wrapper',
+      html: '<div class="picked-pin-pulse"></div><div class="picked-pin-core"></div>',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
+
+    selectionMarker = L.marker([numLat, numLng], {
+      icon: icon,
+      draggable: true,
+      zIndexOffset: 1000
+    }).addTo(map);
+
+    selectionMarker.bindTooltip('🎯 Selected Incident Location (Drag to adjust)', {
+      permanent: false,
+      direction: 'top'
+    });
+
+    // Handle marker drag
+    selectionMarker.on('dragend', function(e) {
+      const pos = e.target.getLatLng();
+      if (!isInsideServiceArea(pos.lat, pos.lng)) {
+        showToast('Marker moved outside the service area. Snapping back.', 'warning');
+        selectionMarker.setLatLng([pickedLocation.lat, pickedLocation.lng]);
+      } else {
+        updateSelectedLocation(pos.lat, pos.lng, false);
+        showToast(`Pin adjusted: ${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`, 'info');
+      }
+    });
+
+    selectionMarker.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+    });
+  } else {
+    selectionMarker.setLatLng([numLat, numLng]);
+  }
+
+  if (panMap && map) {
+    map.panTo([numLat, numLng], { animate: true });
+  }
+
+  showToast(`Location set: ${numLat.toFixed(5)}, ${numLng.toFixed(5)}`, 'success');
+}
+
+function handleManualCoordInput() {
+  const latVal = document.getElementById('report-lat-input').value;
+  const lngVal = document.getElementById('report-lng-input').value;
+
+  if (!latVal || !lngVal) return;
+
+  const lat = parseFloat(latVal);
+  const lng = parseFloat(lngVal);
+
+  if (isNaN(lat) || isNaN(lng) || !isFinite(lat) || !isFinite(lng)) {
+    return;
+  }
+
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    showToast('Invalid latitude or longitude values.', 'warning');
+    return;
+  }
+
+  if (!isInsideServiceArea(lat, lng)) {
+    showToast('Entered coordinates are outside the Ghaziabad & Duhai region.', 'warning');
+    return;
+  }
+
+  updateSelectedLocation(lat, lng, true);
+}
+
+function clearSelectedLocation() {
+  pickedLocation = null;
+  document.getElementById('report-lat').value = '';
+  document.getElementById('report-lng').value = '';
+  document.getElementById('report-lat-input').value = '';
+  document.getElementById('report-lng-input').value = '';
+
+  const coordsBadge = document.getElementById('coords-badge');
+  const coordsText = document.getElementById('coords-text');
+  const btnClear = document.getElementById('btn-clear-coords');
+
+  coordsBadge.classList.remove('selected');
+  coordsText.textContent = '⚠️ No location chosen yet. Tap the map or use GPS.';
+  btnClear.style.display = 'none';
+
+  if (selectionMarker && map) {
+    map.removeLayer(selectionMarker);
+    selectionMarker = null;
+  }
+
+  showToast('Selected location cleared.', 'info');
+}
+
+function pickLocationOnMap() {
+  switchTab('map');
+  isPickingLocation = true;
+  document.getElementById('map-picking-banner').style.display = 'flex';
+  showToast('Tap or click on the map to set the civic issue location.', 'info');
+}
+
+function cancelPickingMode() {
+  isPickingLocation = false;
+  document.getElementById('map-picking-banner').style.display = 'none';
+  switchTab('report');
+}
+
+/* ---------------------------------------------------------------------
+   BROWSER GEOLOCATION ("USE MY CURRENT LOCATION")
+   --------------------------------------------------------------------- */
+function useCurrentGPS() {
+  const btnFab = document.getElementById('btn-map-gps');
+  const btnForm = document.getElementById('btn-form-gps');
+
+  if (!navigator.geolocation) {
+    showToast('Browser Geolocation is not supported on this device.', 'error');
+    return;
+  }
+
+  // Check secure context
+  if (window.isSecureContext === false && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    showToast('Browser Geolocation requires a secure HTTPS connection. Please select location manually on the map.', 'warning');
+    return;
+  }
+
+  if (btnFab) btnFab.innerHTML = '⏳';
+  if (btnForm) btnForm.innerHTML = '<span>⏳</span> Locating...';
+  showToast('Acquiring high-accuracy GPS coordinates...', 'info');
+
+  navigator.geolocation.getCurrentPosition(
+    position => {
+      if (btnFab) btnFab.innerHTML = '🎯';
+      if (btnForm) btnForm.innerHTML = '<span>🎯</span> Use My GPS';
+
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const accuracy = position.coords.accuracy || 20;
+
+      // Render distinct GPS indicator marker
+      if (!userLocationMarker && map) {
+        userLocationMarker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: 'user-gps-pin-wrapper',
+            html: '<div class="user-gps-dot"></div>',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+          }),
+          zIndexOffset: 800
+        }).addTo(map);
+
+        userAccuracyCircle = L.circle([lat, lng], {
+          radius: accuracy,
+          color: '#3b82f6',
+          weight: 1,
+          fillColor: '#3b82f6',
+          fillOpacity: 0.12
+        }).addTo(map);
+      } else if (map) {
+        userLocationMarker.setLatLng([lat, lng]);
+        userAccuracyCircle.setLatLng([lat, lng]).setRadius(accuracy);
+      }
+
+      // Validate boundary
+      if (!isInsideServiceArea(lat, lng)) {
+        if (map) map.flyTo([lat, lng], 14, { duration: 1.2 });
+        showToast(`📍 Your detected GPS location (${lat.toFixed(4)}, ${lng.toFixed(4)}) is outside the Ghaziabad & Duhai service area. Please select a point within the municipal boundary.`, 'warning');
+        return;
+      }
+
+      // Valid inside service area: update report location
+      updateSelectedLocation(lat, lng, true);
+      if (map) map.flyTo([lat, lng], 16, { duration: 1.2 });
+      showToast(`🎯 GPS location acquired (±${Math.round(accuracy)}m). Pin placed.`, 'success');
+    },
+    error => {
+      if (btnFab) btnFab.innerHTML = '🎯';
+      if (btnForm) btnForm.innerHTML = '<span>🎯</span> Use My GPS';
+
+      let msg = 'Unable to acquire GPS location. Please tap the map directly.';
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          msg = 'Location permission was denied. Please allow location access or choose a point on the map.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          msg = 'GPS signal is currently unavailable. Please pick a location manually on the map.';
+          break;
+        case error.TIMEOUT:
+          msg = 'GPS location request timed out. Please try again or tap the map directly.';
+          break;
+      }
+      showToast(msg, 'warning');
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+  );
+}
+
+/* ---------------------------------------------------------------------
+   AREA SHORTCUT NAVIGATION
+   --------------------------------------------------------------------- */
+function flyToQuickLocation(key, btn) {
+  document.querySelectorAll('.quick-loc-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const loc = SHORTCUT_COORDINATES[key];
+  if (!loc || !map) return;
+
+  // Pure camera pan: does NOT alter report's selected location
+  map.flyTo([loc.lat, loc.lng], loc.zoom, { duration: 1.2 });
+  showToast(`Viewing ${loc.label}`, 'info');
+}
+
+/* ---------------------------------------------------------------------
+   REPORTS LOADING & MAP RENDERING
+   --------------------------------------------------------------------- */
+async function reloadReports() {
+  try {
+    const res = await fetch(API + '/api/reports');
+    reports = await res.json();
+
+    const countElem = document.getElementById('drawer-reports-count');
+    if (countElem) countElem.textContent = reports.length;
+
+    renderFilteredReports();
+    renderMarkers();
+  } catch (err) {
+    showToast('Could not load reports from server.', 'error');
+  }
+}
+
+function createMarkerIcon(priority, isResolved = false) {
+  const color = isResolved ? COLORS.Resolved : (COLORS[priority] || COLORS.Medium);
+  return L.divIcon({
+    className: 'custom-map-pin',
+    html: `<div style="
+      background: ${color};
+      width: 28px;
+      height: 28px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      border: 2px solid #ffffff;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    "><div style="
+      width: 10px;
+      height: 10px;
+      background: #ffffff;
+      border-radius: 50%;
+      transform: rotate(45deg);
+    "></div></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 28],
+    popupAnchor: [0, -28]
+  });
+}
+
+function createPopupContent(r) {
+  return `
+    <div style="font-family:'Inter',sans-serif; max-width:260px; padding:2px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-family:monospace; font-size:11px; font-weight:700; color:var(--primary);">${esc(r.id)}</span>
+        <span class="badge-priority ${esc(r.priority)}">${esc(r.priority)}</span>
+      </div>
+      <b style="font-size:13.5px; color:var(--ink); display:block; margin-bottom:4px; line-height:1.3;">
+        ${CATEGORY_ICONS[r.category] || '⚠️'} ${esc(r.category)}
+      </b>
+      <div style="font-size:12px; color:var(--mut); margin-bottom:8px;">
+        📍 ${esc(r.location)}
+      </div>
+      ${r.imageUrl ? `<img src="${esc(r.imageUrl)}" style="width:100%; height:110px; object-fit:cover; border-radius:6px; margin-bottom:8px;" onerror="this.style.display='none'">` : ''}
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; margin-bottom:8px;">
+        <span style="color:var(--mut);">${esc(r.date)}</span>
+        <span class="card-status-badge ${r.status === 'Resolved' ? 'Resolved' : ''}">${esc(r.status)}</span>
+      </div>
+      <button onclick="openReportModal('${r.id}')" style="
+        width: 100%;
+        background: var(--primary);
+        color: #fff;
+        border: 0;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      ">Inspect Report Details</button>
+    </div>
+  `;
+}
+
+function renderMarkers() {
+  if (!map || !reportsLayerGroup) return;
+
+  // Clear existing layers safely to prevent duplicates
+  reportsLayerGroup.clearLayers();
+
+  reports.forEach(r => {
+    if (r.lat == null || r.lng == null) return;
+    const numLat = parseFloat(r.lat);
+    const numLng = parseFloat(r.lng);
+    if (isNaN(numLat) || isNaN(numLng)) return;
+
+    const isResolved = (r.status === 'Resolved');
+    const marker = L.marker([numLat, numLng], {
+      icon: createMarkerIcon(r.priority, isResolved)
+    });
+
+    // Isolate marker click: prevents map click handler from being triggered!
+    marker.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+      focusReportOnMap(r.id, false);
+    });
+
+    marker.bindPopup(createPopupContent(r), {
+      maxWidth: Math.min(280, window.innerWidth - 40),
+      closeButton: false
+    });
+
+    reportsLayerGroup.addLayer(marker);
+  });
+}
+
+function setPriorityFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderFilteredReports();
+}
+
+function handleSearch(val) {
+  currentSearch = val.toLowerCase().trim();
+  renderFilteredReports();
+}
+
+function renderFilteredReports() {
+  const container = document.getElementById('sidebar-reports-list');
+  let filtered = reports.filter(r => {
+    if (currentFilter === 'Resolved' && r.status !== 'Resolved') return false;
+    if (currentFilter !== 'All' && currentFilter !== 'Resolved' && r.priority !== currentFilter) return false;
+    if (currentSearch) {
+      const match = (r.id || '').toLowerCase().includes(currentSearch) ||
+                    (r.location || '').toLowerCase().includes(currentSearch) ||
+                    (r.category || '').toLowerCase().includes(currentSearch) ||
+                    (r.ward || '').toLowerCase().includes(currentSearch) ||
+                    (r.description || '').toLowerCase().includes(currentSearch);
+      if (!match) return false;
+    }
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div style="padding:32px 16px; text-align:center; color:var(--mut);">
+        <div style="font-size:32px; margin-bottom:8px;">🔍</div>
+        <b>No matching civic reports</b>
+        <p style="font-size:12px; margin-top:4px;">Try a different search keyword or filter.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => `
+    <div class="report-card ${selectedReport === r.id ? 'active' : ''}" id="card-${r.id}" onclick="focusReportOnMap('${r.id}')">
+      <div class="card-top-row">
+        <span class="card-tracking-id">${esc(r.id)}</span>
+        <span class="badge-priority ${esc(r.priority)}">${esc(r.priority)}</span>
+      </div>
+      <div class="card-title">${CATEGORY_ICONS[r.category] || '⚠️'} ${esc(r.title || r.category)}</div>
+      <div class="card-location">📍 ${esc(r.location)}</div>
+      <div class="card-bottom-row">
+        <span>Ward: ${esc(r.ward || 'General')}</span>
+        <span class="card-status-badge ${r.status === 'Resolved' ? 'Resolved' : ''}">${esc(r.status)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function focusReportOnMap(id, fly = true) {
+  selectedReport = id;
+  document.querySelectorAll('.report-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.classList.add('active');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  const rep = reports.find(r => r.id.toLowerCase() === id.toLowerCase());
+  if (rep && map && fly) {
+    map.flyTo([rep.lat, rep.lng], 16, { duration: 1 });
+  }
+}
+
+/* ---------------------------------------------------------------------
+   MOBILE DRAWER TOGGLE
+   --------------------------------------------------------------------- */
+function toggleMapDrawer() {
+  const sidebar = document.getElementById('map-sidebar');
+  const handleText = document.getElementById('map-drawer-handle-text');
+  const isCollapsed = sidebar.classList.toggle('collapsed');
+
+  if (isCollapsed) {
+    handleText.innerHTML = `▲ View Reports List (<span id="drawer-reports-count">${reports.length}</span>)`;
+  } else {
+    handleText.innerHTML = `▼ Hide List / View Full Map`;
+  }
+
+  setTimeout(() => {
+    if (map) map.invalidateSize();
+  }, 300);
+}
+
+/* ---------------------------------------------------------------------
+   CATEGORY SELECTION & FORM SUBMISSION
+   --------------------------------------------------------------------- */
+function selectCategory(cat) {
+  document.getElementById('report-category').value = cat;
+  document.querySelectorAll('.category-tile').forEach(t => {
+    t.classList.toggle('active', t.getAttribute('data-cat') === cat);
+  });
+}
+
+function handlePhotoSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('Photo too large. Maximum size is 5 MB.', 'error');
+    e.target.value = '';
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    document.getElementById('photo-preview-img').src = evt.target.result;
+    document.getElementById('photo-preview-box').style.display = 'block';
+    runAIPrescan(evt.target.result);
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhoto() {
+  document.getElementById('photo-input').value = '';
+  document.getElementById('photo-preview-img').src = '';
+  document.getElementById('photo-preview-box').style.display = 'none';
+  document.getElementById('ai-prescan-card').style.display = 'none';
+}
+
+async function runAIPrescan(imageData) {
+  const card = document.getElementById('ai-prescan-card');
+  const badge = document.getElementById('ai-prescan-priority');
+  const notes = document.getElementById('ai-prescan-notes');
+
+  card.style.display = 'block';
+  badge.textContent = 'Analysing...';
+  badge.className = 'badge-priority Medium';
+  notes.textContent = 'AI vision is inspecting image for road hazards, severity grade, and traffic exposure...';
+
+  try {
+    const res = await fetch(API + '/api/ai/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        category: document.getElementById('report-category').value,
+        description: document.getElementById('report-description').value || '',
+        imageData: imageData
+      })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      badge.textContent = `${data.priority} Urgency (${data.urgencyScore}/100)`;
+      badge.className = `badge-priority ${data.priority}`;
+      notes.textContent = `Severity: Grade ${data.severity}/5. Estimated Area: ${data.aiClassification?.boundingArea || 'Standard'}. SLA: ${data.slaHours}h.`;
+    }
+  } catch (err) {
+    notes.textContent = 'Standard heuristic rules will evaluate the report upon submission.';
+  }
+}
+
+async function submitReportForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-submit');
+  const cat = document.getElementById('report-category').value;
+  const lat = document.getElementById('report-lat').value;
+  const lng = document.getElementById('report-lng').value;
+  const loc = document.getElementById('report-location-name').value.trim();
+  const landmark = document.getElementById('report-landmark').value.trim();
+  const desc = document.getElementById('report-description').value.trim();
+  const photoInput = document.getElementById('photo-input');
+
+  if (!lat || !lng) {
+    showToast('Please select the incident location on the map or use GPS before submitting.', 'warning');
+    return;
+  }
+
+  if (!isInsideServiceArea(lat, lng)) {
+    showToast('The selected coordinates are outside the supported Ghaziabad & Duhai service area.', 'error');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('category', cat);
+  fd.append('lat', lat);
+  fd.append('lng', lng);
+  fd.append('location', loc);
+  fd.append('landmark', landmark);
+  fd.append('description', desc);
+
+  if (photoInput.files[0]) {
+    fd.append('image', photoInput.files[0]);
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span>⚡ Dispatching to Municipal Backend...</span>';
+
+  const token = localStorage.getItem('sudharsarthi_token');
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  try {
+    const res = await fetch(API + '/api/reports', {
+      method: 'POST',
+      headers: headers,
+      body: fd,
+      credentials: 'include'
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Submission failed.');
+    }
+
+    lastSubmittedReport = data;
+    openSuccessModal(data);
+
+    // Reset form fields
+    document.getElementById('report-form').reset();
+    removePhoto();
+    clearSelectedLocation();
+
+    await reloadReports();
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>🚀 Submit Civic Report</span>';
+  }
+}
+
+function openSuccessModal(report) {
+  document.getElementById('success-tracking-id').textContent = report.id;
+  document.getElementById('success-ward-name').textContent = report.ward || 'Zone 1';
+  document.getElementById('success-sla').textContent = `${report.slaHours || 48} Hours`;
+
+  const badge = document.getElementById('success-priority-badge');
+  badge.textContent = `${report.priority} Urgency (${report.riskScore}/100)`;
+  badge.className = `badge-priority ${report.priority}`;
+
+  document.getElementById('success-modal').classList.add('active');
+}
+
+function copyTrackingId() {
+  const id = document.getElementById('success-tracking-id').textContent;
+  navigator.clipboard.writeText(id).then(() => {
+    showToast(`Tracking ID ${id} copied to clipboard!`, 'success');
+  });
+}
+
+function viewReportOnMapFromSuccess() {
+  document.getElementById('success-modal').classList.remove('active');
+  switchTab('map');
+  if (lastSubmittedReport) {
+    focusReportOnMap(lastSubmittedReport.id, true);
+  }
+}
+
+function viewReportInCitizenDashboard() {
+  document.getElementById('success-modal').classList.remove('active');
+  switchTab('citizen');
+}
+
+/* ---------------------------------------------------------------------
+   TAB NAVIGATION SYSTEM
+   --------------------------------------------------------------------- */
+function switchTab(tabId, updateHash = true) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+
+  const targetTab = document.getElementById(`tab-${tabId}`);
+  const targetBtn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
+
+  if (targetTab) targetTab.classList.add('active');
+  if (targetBtn) targetBtn.classList.add('active');
+
+  const nav = document.getElementById('main-nav-tabs');
+  if (nav) nav.classList.remove('mobile-open');
+
+  if (updateHash) {
+    history.replaceState(null, null, `#${tabId}`);
+  }
+
+  if (tabId === 'map') {
+    setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 150);
+  } else if (tabId === 'citizen') {
+    loadCitizenDashboard();
+  } else if (tabId === 'analytics') {
+    loadAnalyticsData();
+  }
+}
+
+function toggleMobileNav() {
+  const nav = document.getElementById('main-nav-tabs');
+  nav.classList.toggle('mobile-open');
 }
 
 /* ---------------------------------------------------------------------
@@ -2480,519 +3466,7 @@ function renderCitizenReports(userReports, stats) {
 
 function focusReportFromDashboard(reportId) {
   switchTab('map');
-  focusReportOnMap(reportId);
-}
-
-/* ---------------------------------------------------------------------
-   TAB NAVIGATION SYSTEM
-   --------------------------------------------------------------------- */
-function switchTab(tabId, updateHash = true) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-
-  const targetTab = document.getElementById(`tab-${tabId}`);
-  const targetBtn = document.querySelector(`.nav-btn[data-tab="${tabId}"]`);
-
-  if (targetTab) targetTab.classList.add('active');
-  if (targetBtn) targetBtn.classList.add('active');
-
-  const nav = document.getElementById('main-nav-tabs');
-  if (nav) nav.classList.remove('mobile-open');
-
-  if (updateHash) {
-    history.replaceState(null, null, `#${tabId}`);
-  }
-
-  if (tabId === 'map') {
-    setTimeout(() => {
-      if (map) map.invalidateSize();
-    }, 150);
-  } else if (tabId === 'citizen') {
-    loadCitizenDashboard();
-  } else if (tabId === 'analytics') {
-    loadAnalyticsData();
-  }
-}
-
-function toggleMobileNav() {
-  const nav = document.getElementById('main-nav-tabs');
-  nav.classList.toggle('mobile-open');
-}
-
-/* ---------------------------------------------------------------------
-   EXPANDED INTERACTIVE MAP (GHAZIABAD & DUHAI)
-   --------------------------------------------------------------------- */
-function initInteractiveMap() {
-  const b = cfg.bounds || [28.5800, 77.3300, 28.8200, 77.5600];
-  const southWest = L.latLng(b[0], b[1]);
-  const northEast = L.latLng(b[2], b[3]);
-  const bounds = L.latLngBounds(southWest, northEast);
-
-  map = L.map('map', {
-    minZoom: 11,
-    maxZoom: 19,
-    maxBounds: bounds.pad(0.12),
-    maxBoundsViscosity: 0.4,
-    scrollWheelZoom: true,
-    zoomControl: true
-  }).fitBounds(bounds, { padding: [20, 20] });
-
-  tileLayerOsm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
-
-  tileLayerSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri World Imagery'
-  });
-
-  // Boundary visual outline
-  boundaryPolygon = L.rectangle(bounds, {
-    color: '#0d9488',
-    weight: 2,
-    dashArray: '5, 5',
-    fillColor: '#0d9488',
-    fillOpacity: 0.03
-  }).addTo(map);
-
-  // Map click handler for location picking
-  map.on('click', function(e) {
-    if (isPickingLocation) {
-      handlePickedLocation(e.latlng.lat, e.latlng.lng);
-    }
-  });
-
-  // Responsive resize
-  window.addEventListener('resize', () => {
-    if (map) map.invalidateSize();
-  });
-}
-
-function toggleSatelliteView() {
-  if (!map) return;
-  if (isSatellite) {
-    map.removeLayer(tileLayerSat);
-    map.addLayer(tileLayerOsm);
-    isSatellite = false;
-    showToast('Switched to Street Map', 'info');
-  } else {
-    map.removeLayer(tileLayerOsm);
-    map.addLayer(tileLayerSat);
-    isSatellite = true;
-    showToast('Switched to High-Resolution Satellite View', 'info');
-  }
-}
-
-function resetMapBounds() {
-  if (!map) return;
-  const b = cfg.bounds || [28.5800, 77.3300, 28.8200, 77.5600];
-  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: [20, 20] });
-}
-
-function flyToQuickLocation(key, btn) {
-  document.querySelectorAll('.quick-loc-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-
-  const locs = {
-    'center': [28.6950, 77.4450, 13],
-    'duhai': [28.7285, 77.4740, 15],
-    'rajnagar': [28.6860, 77.4420, 15],
-    'indirapuram': [28.6350, 77.3750, 15],
-    'mohannagar': [28.6750, 77.3680, 15],
-    'muradnagar': [28.7750, 77.5020, 15]
-  };
-
-  const target = locs[key] || [DEFAULT_CENTER[0], DEFAULT_CENTER[1], 13];
-  map.flyTo([target[0], target[1]], target[2], { duration: 1.2 });
-}
-
-/* ---------------------------------------------------------------------
-   REPORTS LOADING & MARKERS
-   --------------------------------------------------------------------- */
-async function reloadReports() {
-  try {
-    const res = await fetch(API + '/api/reports');
-    reports = await res.json();
-    renderFilteredReports();
-    renderMarkers();
-  } catch (err) {
-    showToast('Could not load reports from server.', 'error');
-  }
-}
-
-function createMarkerIcon(priority, isResolved = false) {
-  const color = isResolved ? COLORS.Resolved : (COLORS[priority] || COLORS.Medium);
-  return L.divIcon({
-    className: 'custom-map-pin',
-    html: `<div style="
-      background: ${color};
-      width: 28px;
-      height: 28px;
-      border-radius: 50% 50% 50% 0;
-      transform: rotate(-45deg);
-      border: 2px solid #ffffff;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.35);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    "><div style="
-      width: 10px;
-      height: 10px;
-      background: #ffffff;
-      border-radius: 50%;
-      transform: rotate(45deg);
-    "></div></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 28],
-    popupAnchor: [0, -28]
-  });
-}
-
-function createPopupContent(r) {
-  return `
-    <div style="font-family:'Inter',sans-serif; max-width:260px; padding:2px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-        <span style="font-family:monospace; font-size:11px; font-weight:700; color:var(--primary);">${esc(r.id)}</span>
-        <span class="badge-priority ${esc(r.priority)}">${esc(r.priority)}</span>
-      </div>
-      <b style="font-size:13.5px; color:var(--ink); display:block; margin-bottom:4px; line-height:1.3;">
-        ${CATEGORY_ICONS[r.category] || '⚠️'} ${esc(r.category)}
-      </b>
-      <div style="font-size:12px; color:var(--mut); margin-bottom:8px;">
-        📍 ${esc(r.location)}
-      </div>
-      ${r.imageUrl ? `<img src="${esc(r.imageUrl)}" style="width:100%; height:110px; object-fit:cover; border-radius:6px; margin-bottom:8px;" onerror="this.style.display='none'">` : ''}
-      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11.5px; margin-bottom:8px;">
-        <span style="color:var(--mut);">${esc(r.date)}</span>
-        <span class="card-status-badge ${r.status === 'Resolved' ? 'Resolved' : ''}">${esc(r.status)}</span>
-      </div>
-      <button onclick="openReportModal('${r.id}')" style="
-        width: 100%;
-        background: var(--primary);
-        color: #fff;
-        border: 0;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 12px;
-        font-weight: 600;
-        cursor: pointer;
-      ">Inspect Report Details</button>
-    </div>
-  `;
-}
-
-function renderMarkers() {
-  if (!map) return;
-  Object.values(markers).forEach(m => map.removeLayer(m));
-  markers = {};
-
-  reports.forEach(r => {
-    if (r.lat == null || r.lng == null) return;
-    const isResolved = (r.status === 'Resolved');
-    const marker = L.marker([r.lat, r.lng], {
-      icon: createMarkerIcon(r.priority, isResolved)
-    }).addTo(map);
-
-    marker.bindPopup(createPopupContent(r), { maxWidth: 280, closeButton: false });
-    markers[r.id] = marker;
-  });
-}
-
-function setPriorityFilter(filter, el) {
-  currentFilter = filter;
-  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-  if (el) el.classList.add('active');
-  renderFilteredReports();
-}
-
-function handleSearch(val) {
-  currentSearch = val.toLowerCase().trim();
-  renderFilteredReports();
-}
-
-function renderFilteredReports() {
-  const container = document.getElementById('sidebar-reports-list');
-  let filtered = reports.filter(r => {
-    if (currentFilter === 'Resolved' && r.status !== 'Resolved') return false;
-    if (currentFilter !== 'All' && currentFilter !== 'Resolved' && r.priority !== currentFilter) return false;
-    if (currentSearch) {
-      const match = (r.id || '').toLowerCase().includes(currentSearch) ||
-                    (r.location || '').toLowerCase().includes(currentSearch) ||
-                    (r.category || '').toLowerCase().includes(currentSearch) ||
-                    (r.ward || '').toLowerCase().includes(currentSearch) ||
-                    (r.description || '').toLowerCase().includes(currentSearch);
-      if (!match) return false;
-    }
-    return true;
-  });
-
-  if (filtered.length === 0) {
-    container.innerHTML = `
-      <div style="padding:32px 16px; text-align:center; color:var(--mut);">
-        <div style="font-size:32px; margin-bottom:8px;">🔍</div>
-        <b>No matching civic reports</b>
-        <p style="font-size:12px; margin-top:4px;">Try a different search keyword or filter.</p>
-      </div>
-    `;
-    return;
-  }
-
-  container.innerHTML = filtered.map(r => `
-    <div class="report-card ${selectedReport === r.id ? 'active' : ''}" id="card-${r.id}" onclick="focusReportOnMap('${r.id}')">
-      <div class="card-top-row">
-        <span class="card-tracking-id">${esc(r.id)}</span>
-        <span class="badge-priority ${esc(r.priority)}">${esc(r.priority)}</span>
-      </div>
-      <div class="card-title">${CATEGORY_ICONS[r.category] || '⚠️'} ${esc(r.title || r.category)}</div>
-      <div class="card-location">📍 ${esc(r.location)}</div>
-      <div class="card-bottom-row">
-        <span>Ward: ${esc(r.ward || 'General')}</span>
-        <span class="card-status-badge ${r.status === 'Resolved' ? 'Resolved' : ''}">${esc(r.status)}</span>
-      </div>
-    </div>
-  `).join('');
-}
-
-function focusReportOnMap(id) {
-  selectedReport = id;
-  document.querySelectorAll('.report-card').forEach(c => c.classList.remove('active'));
-  const card = document.getElementById(`card-${id}`);
-  if (card) card.classList.add('active');
-
-  const rep = reports.find(r => r.id.toLowerCase() === id.toLowerCase());
-  if (rep && map && markers[rep.id]) {
-    map.flyTo([rep.lat, rep.lng], 16, { duration: 1 });
-    markers[rep.id].openPopup();
-  }
-}
-
-/* ---------------------------------------------------------------------
-   REPORT SUBMISSION FORM & LOCATION PICKER
-   --------------------------------------------------------------------- */
-function selectCategory(cat) {
-  document.getElementById('report-category').value = cat;
-  document.querySelectorAll('.category-tile').forEach(t => {
-    t.classList.toggle('active', t.getAttribute('data-cat') === cat);
-  });
-}
-
-function pickLocationOnMap() {
-  switchTab('map');
-  isPickingLocation = true;
-  document.getElementById('map-picking-banner').style.display = 'flex';
-  showToast('Tap or click on the map where the issue is located.', 'info');
-}
-
-function cancelPickingMode() {
-  isPickingLocation = false;
-  document.getElementById('map-picking-banner').style.display = 'none';
-}
-
-function handlePickedLocation(lat, lng) {
-  pickedLocation = { lat, lng };
-  isPickingLocation = false;
-  document.getElementById('map-picking-banner').style.display = 'none';
-
-  document.getElementById('report-lat').value = lat.toFixed(5);
-  document.getElementById('report-lng').value = lng.toFixed(5);
-  document.getElementById('coords-text').textContent = `Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
-
-  if (pickMarker) map.removeLayer(pickMarker);
-  pickMarker = L.marker([lat, lng], {
-    icon: L.divIcon({
-      className: 'picked-pin',
-      html: '<div style="background:#0d9488; width:22px; height:22px; border-radius:50%; border:3px solid #fff; box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>',
-      iconSize: [22, 22],
-      iconAnchor: [11, 11]
-    })
-  }).addTo(map);
-
-  showToast(`Location set: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
-  switchTab('report');
-}
-
-function useCurrentGPS() {
-  if (!navigator.geolocation) {
-    showToast('Geolocation is not supported by your browser.', 'error');
-    return;
-  }
-
-  showToast('Detecting your GPS location...', 'info');
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      // Validate bounds
-      const b = cfg.bounds || [28.5800, 77.3300, 28.8200, 77.5600];
-      if (lat < b[0] || lat > b[2] || lng < b[1] || lng > b[3]) {
-        showToast('Your GPS coordinates fall outside our Ghaziabad & Duhai service region.', 'warning');
-        return;
-      }
-
-      handlePickedLocation(lat, lng);
-    },
-    err => {
-      showToast('Could not retrieve GPS location. Please pick location manually on the map.', 'warning');
-    },
-    { enableHighAccuracy: true, timeout: 8000 }
-  );
-}
-
-function handlePhotoSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('Photo too large. Maximum size is 5 MB.', 'error');
-    e.target.value = '';
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    document.getElementById('photo-preview-img').src = evt.target.result;
-    document.getElementById('photo-preview-box').style.display = 'block';
-    runAIPrescan(evt.target.result);
-  };
-  reader.readAsDataURL(file);
-}
-
-function removePhoto() {
-  document.getElementById('photo-input').value = '';
-  document.getElementById('photo-preview-img').src = '';
-  document.getElementById('photo-preview-box').style.display = 'none';
-  document.getElementById('ai-prescan-card').style.display = 'none';
-}
-
-async function runAIPrescan(imageData) {
-  const card = document.getElementById('ai-prescan-card');
-  const badge = document.getElementById('ai-prescan-priority');
-  const notes = document.getElementById('ai-prescan-notes');
-
-  card.style.display = 'block';
-  badge.textContent = 'Analysing...';
-  badge.className = 'badge-priority Medium';
-  notes.textContent = 'AI vision is inspecting image for road hazards, severity grade, and traffic exposure...';
-
-  try {
-    const res = await fetch(API + '/api/ai/classify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category: document.getElementById('report-category').value,
-        description: document.getElementById('report-description').value || '',
-        imageData: imageData
-      })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      badge.textContent = `${data.priority} Urgency (${data.urgencyScore}/100)`;
-      badge.className = `badge-priority ${data.priority}`;
-      notes.textContent = `Severity: Grade ${data.severity}/5. Estimated Area: ${data.aiClassification?.boundingArea || 'Standard'}. SLA: ${data.slaHours}h.`;
-    }
-  } catch (err) {
-    notes.textContent = 'Standard heuristic rules will evaluate the report upon submission.';
-  }
-}
-
-async function submitReportForm(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-submit');
-  const cat = document.getElementById('report-category').value;
-  const lat = document.getElementById('report-lat').value;
-  const lng = document.getElementById('report-lng').value;
-  const loc = document.getElementById('report-location-name').value.trim();
-  const landmark = document.getElementById('report-landmark').value.trim();
-  const desc = document.getElementById('report-description').value.trim();
-  const photoInput = document.getElementById('photo-input');
-
-  if (!lat || !lng) {
-    showToast('Please select the incident location on the map or use GPS.', 'warning');
-    return;
-  }
-
-  const fd = new FormData();
-  fd.append('category', cat);
-  fd.append('lat', lat);
-  fd.append('lng', lng);
-  fd.append('location', loc);
-  fd.append('landmark', landmark);
-  fd.append('description', desc);
-
-  if (photoInput.files[0]) {
-    fd.append('image', photoInput.files[0]);
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = '<span>⚡ Dispatching to Municipal Backend...</span>';
-
-  const token = localStorage.getItem('sudharsarthi_token');
-  const headers = {};
-  if (token) headers['Authorization'] = `Bearer ${token}`;
-
-  try {
-    const res = await fetch(API + '/api/reports', {
-      method: 'POST',
-      headers: headers,
-      body: fd,
-      credentials: 'include'
-    });
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Submission failed.');
-    }
-
-    lastSubmittedReport = data;
-    openSuccessModal(data);
-
-    // Reset form
-    document.getElementById('report-form').reset();
-    removePhoto();
-    document.getElementById('coords-text').textContent = 'No location picked. Tap map or GPS.';
-    document.getElementById('report-lat').value = '';
-    document.getElementById('report-lng').value = '';
-
-    await reloadReports();
-  } catch (err) {
-    showToast(`Error: ${err.message}`, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = '<span>🚀 Submit Civic Report</span>';
-  }
-}
-
-function openSuccessModal(report) {
-  document.getElementById('success-tracking-id').textContent = report.id;
-  document.getElementById('success-ward-name').textContent = report.ward || 'Zone 1';
-  document.getElementById('success-sla').textContent = `${report.slaHours || 48} Hours`;
-
-  const badge = document.getElementById('success-priority-badge');
-  badge.textContent = `${report.priority} Urgency (${report.riskScore}/100)`;
-  badge.className = `badge-priority ${report.priority}`;
-
-  document.getElementById('success-modal').classList.add('active');
-}
-
-function copyTrackingId() {
-  const id = document.getElementById('success-tracking-id').textContent;
-  navigator.clipboard.writeText(id).then(() => {
-    showToast(`Tracking ID ${id} copied to clipboard!`, 'success');
-  });
-}
-
-function viewReportOnMapFromSuccess() {
-  document.getElementById('success-modal').classList.remove('active');
-  switchTab('map');
-  if (lastSubmittedReport) {
-    focusReportOnMap(lastSubmittedReport.id);
-  }
-}
-
-function viewReportInCitizenDashboard() {
-  document.getElementById('success-modal').classList.remove('active');
-  switchTab('citizen');
+  focusReportOnMap(reportId, true);
 }
 
 /* ---------------------------------------------------------------------
@@ -3099,13 +3573,14 @@ function renderWardTable(wards) {
    --------------------------------------------------------------------- */
 function renderWardsDirectory() {
   const container = document.getElementById('wards-directory-grid');
-  const wardDetails = cfg.wardDetails || [
+  const wardDetails = (cfg && cfg.wardDetails) ? cfg.wardDetails : [
     { name: 'Zone 1 (Duhai Village)', lat: 28.7304, lng: 77.4759, officer: 'Zone 1 Officer', email: 'zone1.officer@example.org' },
     { name: 'Zone 2 (Duhai RRTS Station)', lat: 28.7273, lng: 77.4718, officer: 'Zone 2 Officer', email: 'zone2.officer@example.org' },
     { name: 'Zone 7 (Raj Nagar / Sanjay Nagar)', lat: 28.6860, lng: 77.4420, officer: 'Zone 7 Officer', email: 'zone7.officer@example.org' },
     { name: 'Zone 8 (Kavi Nagar / Govindpuram)', lat: 28.6670, lng: 77.4650, officer: 'Zone 8 Officer', email: 'zone8.officer@example.org' },
     { name: 'Zone 9 (Mohan Nagar / Sahibabad)', lat: 28.6750, lng: 77.3680, officer: 'Zone 9 Officer', email: 'zone9.officer@example.org' },
-    { name: 'Zone 10 (Indirapuram / Crossings)', lat: 28.6350, lng: 77.3750, officer: 'Zone 10 Officer', email: 'zone10.officer@example.org' }
+    { name: 'Zone 10 (Indirapuram / Crossings)', lat: 28.6350, lng: 77.3750, officer: 'Zone 10 Officer', email: 'zone10.officer@example.org' },
+    { name: 'Zone 11 (Muradnagar / Morta)', lat: 28.7750, lng: 77.5020, officer: 'Zone 11 Officer', email: 'zone11.officer@example.org' }
   ];
 
   container.innerHTML = wardDetails.map(w => `
@@ -3192,7 +3667,7 @@ function openReportModal(reportId) {
 
     <div style="display:flex; justify-content:flex-end; gap:8px;">
       <button class="auth-btn btn-login" onclick="closeModal()">Close Details</button>
-      <button class="auth-btn btn-register" onclick="closeModal(); switchTab('map'); focusReportOnMap('${r.id}')">View on City Map</button>
+      <button class="auth-btn btn-register" onclick="closeModal(); switchTab('map'); focusReportOnMap('${r.id}', true)">View on City Map</button>
     </div>
   `;
 
