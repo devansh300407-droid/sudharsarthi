@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+<meta name="backend-api-url" content="">
 <title>SUDHARSARTHI | Ghaziabad & Duhai Civic Issue & Road Safety Monitor</title>
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2299,14 +2300,18 @@ textarea.form-control {
 <script>
 /* Smart Backend Resolver */
 let API = (function() {
-  const urlParam = new URLSearchParams(window.location.search).get('backend');
+  const params = new URLSearchParams(window.location.search);
+  const urlParam = params.get('backend') || params.get('api');
   if (urlParam) {
-    localStorage.setItem('SUDHARSARTHI_BACKEND_URL', urlParam.replace(/\/+$/, ''));
-    return urlParam.replace(/\/+$/, '');
+    const clean = urlParam.replace(/\/+$/, '');
+    localStorage.setItem('SUDHARSARTHI_BACKEND_URL', clean);
+    return clean;
   }
   const stored = localStorage.getItem('SUDHARSARTHI_BACKEND_URL');
   if (stored) return stored.replace(/\/+$/, '');
   if (window.API_BASE) return window.API_BASE.replace(/\/+$/, '');
+  const metaApi = document.querySelector('meta[name="backend-api-url"]');
+  if (metaApi && metaApi.content && metaApi.content.trim()) return metaApi.content.trim().replace(/\/+$/, '');
   if (window.location.hostname.includes('onrender.com')) return '';
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return (window.location.port === '5000') ? '' : 'http://127.0.0.1:5000';
@@ -2314,9 +2319,61 @@ let API = (function() {
   return '';
 })();
 
-// Authoritative Fallback Coordinates (Ghaziabad & Duhai Region)
-const DEFAULT_CENTER = [28.6950, 77.4450];
-const DEFAULT_BOUNDS = [28.5800, 77.3300, 28.8200, 77.5600];
+// Authoritative Initial Center & Boundaries (Nationwide Reporting with Ghaziabad-Duhai Focus)
+const DEFAULT_CENTER = [28.6950, 77.4450]; // Duhai-Ghaziabad initial corridor
+const DEFAULT_BOUNDS = [6.0000, 68.0000, 38.0000, 98.0000]; // Nationwide India
+const FOCAL_BOUNDS = [28.5800, 77.3300, 28.8200, 77.5600]; // Ghaziabad & Duhai Pilot Cluster
+
+/* Resilient Network & JSON Fetch Helper
+   Guarantees that HTML responses (e.g. 502/504 Bad Gateway, 404 pages) never trigger
+   "Unexpected token '<', '<!doctype '... is not valid JSON" parsing errors. */
+async function safeFetchJson(url, options = {}) {
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch (netErr) {
+    throw new Error('Network error: Unable to reach the server. Please check your internet connection or verify the backend service is running.');
+  }
+
+  const contentType = (res.headers.get('content-type') || '').toLowerCase();
+  let data = null;
+
+  if (contentType.includes('application/json')) {
+    try {
+      data = await res.json();
+    } catch (e) {
+      data = null;
+    }
+  }
+
+  if (!res.ok) {
+    if (data && data.error) {
+      throw new Error(data.error);
+    }
+    if (res.status === 502 || res.status === 503 || res.status === 504) {
+      throw new Error('The backend service is starting up (Render free tier wakes up in ~30 seconds) or temporarily unavailable. Please retry in a few moments.');
+    }
+    if (res.status === 404) {
+      throw new Error('The requested API endpoint was not found (HTTP 404). Please verify your backend deployment URL.');
+    }
+    if (res.status === 409) {
+      throw new Error((data && data.error) || 'Conflict: An account with this email or mobile number already exists.');
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new Error((data && data.error) || 'Authentication failed or session expired. Please log in.');
+    }
+    if (res.status === 429) {
+      throw new Error('Too many requests. Please wait a few moments and try again.');
+    }
+    throw new Error(`Server returned error (HTTP ${res.status} ${res.statusText || 'Error'}).`);
+  }
+
+  if (data === null) {
+    throw new Error('Unexpected response format from server (expected JSON data). If hosting on Vercel, ensure the API rewrite is connected to your Render backend.');
+  }
+
+  return data;
+}
 
 const COLORS = {
   High: '#dc2626',
@@ -2404,22 +2461,35 @@ function isInsideServiceArea(lat, lng) {
   return numLat >= s && numLat <= n && numLng >= w && numLng <= e;
 }
 
+function isInsideFocalArea(lat, lng) {
+  if (lat == null || lng == null) return false;
+  const numLat = parseFloat(lat);
+  const numLng = parseFloat(lng);
+  if (isNaN(numLat) || isNaN(numLng) || !isFinite(numLat) || !isFinite(numLng)) {
+    return false;
+  }
+  const fb = (cfg && cfg.focalBounds) ? cfg.focalBounds : FOCAL_BOUNDS;
+  const [s, w, n, e] = fb;
+  return numLat >= s && numLat <= n && numLng >= w && numLng <= e;
+}
+
 /* ---------------------------------------------------------------------
    INITIALIZATION
    --------------------------------------------------------------------- */
 async function initApp() {
   try {
-    const res = await fetch(API + '/api/config', { credentials: 'include' });
-    cfg = await res.json();
-    if (cfg.area) {
+    cfg = await safeFetchJson(API + '/api/config', { credentials: 'include' });
+    if (cfg && cfg.area) {
       document.getElementById('header-area-name').textContent = cfg.area;
     }
   } catch (err) {
     console.warn('Backend API config fetch failed, using authoritative defaults:', err);
     cfg = {
-      area: 'Ghaziabad & Duhai Region',
+      area: 'Ghaziabad & Duhai Region (All-India Enabled)',
       center: DEFAULT_CENTER,
       bounds: DEFAULT_BOUNDS,
+      focalBounds: FOCAL_BOUNDS,
+      focalAreaName: 'Ghaziabad & Duhai Municipal Cluster',
       categories: ['Pothole', 'Road Crack', 'Surface Damage', 'Waterlogging', 'Fallen Tree', 'Garbage', 'Other'],
       wards: [
         'Zone 1 (Duhai Village)', 'Zone 2 (Duhai RRTS Station)', 'Zone 3 (North Duhai)',
@@ -2453,22 +2523,18 @@ function initInteractiveMap() {
   // Prevent duplicate initialization
   if (map) return;
 
-  const b = (cfg && cfg.bounds) ? cfg.bounds : DEFAULT_BOUNDS;
-  const southWest = L.latLng(b[0], b[1]);
-  const northEast = L.latLng(b[2], b[3]);
-  const bounds = L.latLngBounds(southWest, northEast);
+  const centerLat = (cfg && cfg.center && cfg.center[0]) || DEFAULT_CENTER[0];
+  const centerLng = (cfg && cfg.center && cfg.center[1]) || DEFAULT_CENTER[1];
 
-  // Initialize Map exactly once with smooth panning and touch support
+  // Initialize Map exactly once: smooth panning across India, minZoom 4, maxZoom 19
   map = L.map('map', {
-    minZoom: 10,
+    minZoom: 4,
     maxZoom: 19,
-    maxBounds: bounds.pad(0.20),
-    maxBoundsViscosity: 0.25,
     scrollWheelZoom: true,
     tap: true,
     touchZoom: true,
     zoomControl: true
-  }).fitBounds(bounds, { padding: [25, 25] });
+  }).setView([centerLat, centerLng], 12);
 
   // Layer groups for clean marker lifecycle
   reportsLayerGroup = L.layerGroup().addTo(map);
@@ -2489,14 +2555,20 @@ function initInteractiveMap() {
     attribution: '&copy; Esri World Imagery'
   });
 
-  // Official Service Boundary Outline
-  boundaryPolygon = L.rectangle(bounds, {
+  // Official Municipal Pilot Corridor Boundary Outline (Ghaziabad & Duhai Region)
+  const fb = (cfg && cfg.focalBounds) ? cfg.focalBounds : FOCAL_BOUNDS;
+  boundaryPolygon = L.rectangle([[fb[0], fb[1]], [fb[2], fb[3]]], {
     color: '#0d9488',
     weight: 2,
     dashArray: '6, 6',
     fillColor: '#0d9488',
-    fillOpacity: 0.04
+    fillOpacity: 0.05
   }).addTo(map);
+
+  boundaryPolygon.bindTooltip('🏛️ Municipal Pilot Corridor: Ghaziabad & Duhai Region (Nationwide reporting enabled)', {
+    direction: 'top',
+    sticky: true
+  });
 
   // Map Click Listener for Location Selection
   map.on('click', function(e) {
@@ -2537,9 +2609,9 @@ function toggleSatelliteView() {
 
 function resetMapBounds() {
   if (!map) return;
-  const b = (cfg && cfg.bounds) ? cfg.bounds : DEFAULT_BOUNDS;
-  map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: [25, 25] });
-  showToast('Map view reset to full Ghaziabad & Duhai region.', 'info');
+  const fb = (cfg && cfg.focalBounds) ? cfg.focalBounds : FOCAL_BOUNDS;
+  map.fitBounds([[fb[0], fb[1]], [fb[2], fb[3]]], { padding: [25, 25] });
+  showToast('Map view centered on Ghaziabad & Duhai Municipal Pilot Corridor.', 'info');
 }
 
 /* ---------------------------------------------------------------------
@@ -2547,7 +2619,7 @@ function resetMapBounds() {
    --------------------------------------------------------------------- */
 function handleMapClick(lat, lng) {
   if (!isInsideServiceArea(lat, lng)) {
-    showToast(`📍 Selected point (${lat.toFixed(4)}, ${lng.toFixed(4)}) is outside the Ghaziabad & Duhai service area. Please choose a location within the highlighted municipal boundary.`, 'warning');
+    showToast(`📍 Selected point (${lat.toFixed(4)}, ${lng.toFixed(4)}) is outside the supported region (India).`, 'warning');
     return;
   }
   updateSelectedLocation(lat, lng, false);
@@ -2562,7 +2634,7 @@ function updateSelectedLocation(lat, lng, panMap = false) {
   }
 
   if (!isInsideServiceArea(numLat, numLng)) {
-    showToast('Coordinates fall outside our supported service area.', 'warning');
+    showToast('Coordinates fall outside the supported region (India).', 'warning');
     return;
   }
 
@@ -2581,8 +2653,11 @@ function updateSelectedLocation(lat, lng, panMap = false) {
   const coordsText = document.getElementById('coords-text');
   const btnClear = document.getElementById('btn-clear-coords');
 
+  const inFocal = isInsideFocalArea(numLat, numLng);
+  const areaTag = inFocal ? '(Ghaziabad-Duhai Pilot Area)' : '(Verified Location)';
+
   coordsBadge.classList.add('selected');
-  coordsText.innerHTML = `📍 <b>Selected:</b> ${numLat.toFixed(5)}, ${numLng.toFixed(5)} <span style="color:#0f766e;">(Verified)</span>`;
+  coordsText.innerHTML = `📍 <b>Selected:</b> ${numLat.toFixed(5)}, ${numLng.toFixed(5)} <span style="color:#0f766e; font-weight:600;">${areaTag}</span>`;
   btnClear.style.display = 'inline-block';
 
   // Manage Leaflet selection marker
@@ -2610,7 +2685,7 @@ function updateSelectedLocation(lat, lng, panMap = false) {
     selectionMarker.on('dragend', function(e) {
       const pos = e.target.getLatLng();
       if (!isInsideServiceArea(pos.lat, pos.lng)) {
-        showToast('Marker moved outside the service area. Snapping back.', 'warning');
+        showToast('Marker moved outside supported region. Snapping back.', 'warning');
         selectionMarker.setLatLng([pickedLocation.lat, pickedLocation.lng]);
       } else {
         updateSelectedLocation(pos.lat, pos.lng, false);
@@ -2629,7 +2704,7 @@ function updateSelectedLocation(lat, lng, panMap = false) {
     map.panTo([numLat, numLng], { animate: true });
   }
 
-  showToast(`Location set: ${numLat.toFixed(5)}, ${numLng.toFixed(5)}`, 'success');
+  showToast(`Location set: ${numLat.toFixed(5)}, ${numLng.toFixed(5)} ${inFocal ? '🎯' : '🗺️'}`, 'success');
 }
 
 function handleManualCoordInput() {
@@ -2651,7 +2726,7 @@ function handleManualCoordInput() {
   }
 
   if (!isInsideServiceArea(lat, lng)) {
-    showToast('Entered coordinates are outside the Ghaziabad & Duhai region.', 'warning');
+    showToast('Entered coordinates are outside the supported region (India).', 'warning');
     return;
   }
 
@@ -2752,7 +2827,7 @@ function useCurrentGPS() {
       // Validate boundary
       if (!isInsideServiceArea(lat, lng)) {
         if (map) map.flyTo([lat, lng], 14, { duration: 1.2 });
-        showToast(`📍 Your detected GPS location (${lat.toFixed(4)}, ${lng.toFixed(4)}) is outside the Ghaziabad & Duhai service area. Please select a point within the municipal boundary.`, 'warning');
+        showToast(`📍 Your detected GPS location (${lat.toFixed(4)}, ${lng.toFixed(4)}) is outside the supported region (India).`, 'warning');
         return;
       }
 
@@ -2803,16 +2878,16 @@ function flyToQuickLocation(key, btn) {
    --------------------------------------------------------------------- */
 async function reloadReports() {
   try {
-    const res = await fetch(API + '/api/reports');
-    reports = await res.json();
-
-    const countElem = document.getElementById('drawer-reports-count');
-    if (countElem) countElem.textContent = reports.length;
-
-    renderFilteredReports();
-    renderMarkers();
+    const data = await safeFetchJson(API + '/api/reports');
+    if (Array.isArray(data)) {
+      reports = data;
+      const countElem = document.getElementById('drawer-reports-count');
+      if (countElem) countElem.textContent = reports.length;
+      renderFilteredReports();
+      renderMarkers();
+    }
   } catch (err) {
-    showToast('Could not load reports from server.', 'error');
+    console.warn('Could not load reports from server:', err);
   }
 }
 
@@ -3045,20 +3120,32 @@ async function runAIPrescan(imageData) {
   notes.textContent = 'AI vision is inspecting image for road hazards, severity grade, and traffic exposure...';
 
   try {
-    const res = await fetch(API + '/api/ai/classify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        category: document.getElementById('report-category').value,
-        description: document.getElementById('report-description').value || '',
-        imageData: imageData
-      })
-    });
-    const data = await res.json();
-    if (res.ok) {
+    let res;
+    try {
+      res = await fetch(API + '/api/ai/classify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: document.getElementById('report-category').value,
+          description: document.getElementById('report-description').value || '',
+          imageData: imageData
+        })
+      });
+    } catch (netErr) {
+      notes.textContent = 'Prescan skipped (offline / backend starting). Standard heuristic engine will evaluate report upon submission.';
+      return;
+    }
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    let data = null;
+    if (contentType.includes('application/json')) {
+      try { data = await res.json(); } catch (e) {}
+    }
+    if (res.ok && data) {
       badge.textContent = `${data.priority} Urgency (${data.urgencyScore}/100)`;
       badge.className = `badge-priority ${data.priority}`;
       notes.textContent = `Severity: Grade ${data.severity}/5. Estimated Area: ${data.aiClassification?.boundingArea || 'Standard'}. SLA: ${data.slaHours}h.`;
+    } else {
+      notes.textContent = 'Standard heuristic rules will evaluate the report upon submission.';
     }
   } catch (err) {
     notes.textContent = 'Standard heuristic rules will evaluate the report upon submission.';
@@ -3082,7 +3169,7 @@ async function submitReportForm(e) {
   }
 
   if (!isInsideServiceArea(lat, lng)) {
-    showToast('The selected coordinates are outside the supported Ghaziabad & Duhai service area.', 'error');
+    showToast('The selected coordinates are outside the supported region (India).', 'error');
     return;
   }
 
@@ -3106,15 +3193,30 @@ async function submitReportForm(e) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   try {
-    const res = await fetch(API + '/api/reports', {
-      method: 'POST',
-      headers: headers,
-      body: fd,
-      credentials: 'include'
-    });
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Submission failed.');
+    let res;
+    try {
+      res = await fetch(API + '/api/reports', {
+        method: 'POST',
+        headers: headers,
+        body: fd,
+        credentials: 'include'
+      });
+    } catch (netErr) {
+      throw new Error('Network error: Unable to reach the server. Please check your internet connection or verify the backend service is running.');
+    }
+
+    const contentType = (res.headers.get('content-type') || '').toLowerCase();
+    let data = null;
+    if (contentType.includes('application/json')) {
+      try { data = await res.json(); } catch (e) {}
+    }
+
+    if (!res.ok || !data || !data.success) {
+      const errMsg = (data && data.error) ? data.error :
+                     (res.status === 502 || res.status === 503 || res.status === 504) ? 'The backend service is starting up (Render free tier wakes up in ~30 seconds). Please retry in a moment.' :
+                     (res.status === 404) ? 'API endpoint not found (HTTP 404). Please verify backend deployment URL.' :
+                     `Submission failed (HTTP ${res.status}).`;
+      throw new Error(errMsg);
     }
 
     lastSubmittedReport = data;
@@ -3211,17 +3313,14 @@ async function checkAuthStatus() {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   try {
-    const res = await fetch(API + '/api/auth/me', { headers, credentials: 'include' });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success && data.user) {
-        currentUser = data.user;
-        updateAuthUI(true);
-        return;
-      }
+    const data = await safeFetchJson(API + '/api/auth/me', { headers, credentials: 'include' });
+    if (data && data.success && data.user) {
+      currentUser = data.user;
+      updateAuthUI(true);
+      return;
     }
   } catch (err) {
-    // Guest mode
+    // Guest mode or session expired
   }
   currentUser = null;
   updateAuthUI(false);
@@ -3296,20 +3395,26 @@ async function handleCitizenLogin(e) {
   const errBanner = document.getElementById('auth-error-banner');
   const btn = document.getElementById('btn-login-submit');
 
+  if (!identifier || !password) {
+    errBanner.textContent = 'Please enter your email or mobile number and password.';
+    errBanner.style.display = 'block';
+    return;
+  }
+
   btn.disabled = true;
   btn.innerHTML = '<span>Verifying credentials...</span>';
   errBanner.style.display = 'none';
 
   try {
-    const res = await fetch(API + '/api/auth/login', {
+    const data = await safeFetchJson(API + '/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, password }),
       credentials: 'include'
     });
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Login failed. Please check credentials.');
+
+    if (!data || !data.success || !data.token) {
+      throw new Error((data && data.error) || 'Login failed. Please check credentials.');
     }
 
     localStorage.setItem('sudharsarthi_token', data.token);
@@ -3340,8 +3445,30 @@ async function handleCitizenRegister(e) {
   const errBanner = document.getElementById('auth-error-banner');
   const btn = document.getElementById('btn-reg-submit');
 
+  if (!name || name.length < 2) {
+    errBanner.textContent = 'Please provide your full name (at least 2 characters).';
+    errBanner.style.display = 'block';
+    return;
+  }
+  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  if (!emailRegex.test(email)) {
+    errBanner.textContent = 'Please enter a valid email address.';
+    errBanner.style.display = 'block';
+    return;
+  }
+  const cleanPhone = phone.replace(/\D/g, '').replace(/^91/, '');
+  if (cleanPhone.length !== 10 || !['6', '7', '8', '9'].includes(cleanPhone[0])) {
+    errBanner.textContent = 'Please enter a valid 10-digit Indian mobile number (e.g. 9876543210).';
+    errBanner.style.display = 'block';
+    return;
+  }
+  if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    errBanner.textContent = 'Password must be at least 8 characters and include at least one letter and one number.';
+    errBanner.style.display = 'block';
+    return;
+  }
   if (password !== confirmPassword) {
-    errBanner.textContent = 'Passwords do not match.';
+    errBanner.textContent = 'Passwords do not match. Please verify your password.';
     errBanner.style.display = 'block';
     return;
   }
@@ -3351,15 +3478,15 @@ async function handleCitizenRegister(e) {
   errBanner.style.display = 'none';
 
   try {
-    const res = await fetch(API + '/api/auth/register', {
+    const data = await safeFetchJson(API + '/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, phone, email, password, confirmPassword }),
+      body: JSON.stringify({ name, phone: cleanPhone, email, password, confirmPassword }),
       credentials: 'include'
     });
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || 'Registration failed.');
+
+    if (!data || !data.success || !data.token) {
+      throw new Error((data && data.error) || 'Registration could not be confirmed by the server.');
     }
 
     localStorage.setItem('sudharsarthi_token', data.token);
@@ -3370,6 +3497,7 @@ async function handleCitizenRegister(e) {
 
     switchTab('citizen');
   } catch (err) {
+    // Safe error message: never exposes raw JSON parse syntax error or passwords
     errBanner.textContent = err.message;
     errBanner.style.display = 'block';
   } finally {
@@ -3407,14 +3535,13 @@ async function loadCitizenDashboard() {
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   try {
-    const res = await fetch(API + '/api/citizen/reports', { headers, credentials: 'include' });
-    const data = await res.json();
-    if (data.success) {
+    const data = await safeFetchJson(API + '/api/citizen/reports', { headers, credentials: 'include' });
+    if (data && data.success) {
       myReports = data.reports || [];
       renderCitizenReports(myReports, data.stats);
     }
   } catch (err) {
-    showToast('Failed to load citizen reports.', 'error');
+    showToast(err.message || 'Failed to load citizen reports.', 'error');
   }
 }
 
@@ -3474,8 +3601,8 @@ function focusReportFromDashboard(reportId) {
    --------------------------------------------------------------------- */
 async function loadAnalyticsData() {
   try {
-    const res = await fetch(API + '/api/analytics');
-    const a = await res.json();
+    const a = await safeFetchJson(API + '/api/analytics');
+    if (!a) return;
 
     document.getElementById('stat-total').textContent = a.totalReports || 0;
     document.getElementById('stat-critical').textContent = a.highPriority || 0;
@@ -3486,7 +3613,7 @@ async function loadAnalyticsData() {
     renderTrendChart(a.monthlyTrend || []);
     renderWardTable(a.wards || []);
   } catch (err) {
-    showToast('Failed to load city analytics.', 'error');
+    console.warn('Failed to load city analytics:', err);
   }
 }
 

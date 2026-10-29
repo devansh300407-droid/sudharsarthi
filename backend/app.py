@@ -32,6 +32,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta
 
 from flask import Flask, jsonify, make_response, request, send_from_directory
+from werkzeug.exceptions import HTTPException
 from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -88,9 +89,37 @@ def bad(message, code=400):
     return jsonify({"success": False, "error": message}), code
 
 
+@app.errorhandler(400)
+def handle_400(err):
+    msg = getattr(err, "description", "Bad Request")
+    return bad(msg, 400)
+
+
+@app.errorhandler(404)
+def handle_404(err):
+    return bad("API endpoint not found (HTTP 404).", 404)
+
+
+@app.errorhandler(405)
+def handle_405(err):
+    return bad("HTTP method not allowed on this endpoint (HTTP 405).", 405)
+
+
 @app.errorhandler(413)
 def too_big(_):
     return bad(f"Photo too large (max {MAX_UPLOAD_MB} MB).", 413)
+
+
+@app.errorhandler(500)
+def handle_500(err):
+    return bad("Internal server error (HTTP 500). Please try again shortly.", 500)
+
+
+@app.errorhandler(Exception)
+def handle_general_exception(err):
+    if isinstance(err, HTTPException):
+        return bad(err.description, err.code)
+    return bad(f"Unexpected server error: {str(err)}", 500)
 
 
 def _get_allowed_origin():
@@ -98,12 +127,15 @@ def _get_allowed_origin():
     conf = os.environ.get("CORS_ORIGIN", "*")
     req_origin = request.headers.get("Origin")
     if not req_origin:
-        return conf
+        return conf if conf != "*" else "*"
     if conf == "*":
         # When supporting credentials, reflect request origin
         return req_origin
     allowed = [o.strip() for o in conf.split(",") if o.strip()]
     if req_origin in allowed or "*" in allowed:
+        return req_origin
+    # Allow Vercel preview and production origins by default
+    if req_origin.endswith(".vercel.app") or "localhost" in req_origin or "127.0.0.1" in req_origin:
         return req_origin
     return allowed[0] if allowed else req_origin
 
@@ -114,8 +146,9 @@ def handle_options_preflight():
         resp = app.make_default_options_response()
         resp.headers["Access-Control-Allow-Origin"] = _get_allowed_origin()
         resp.headers["Access-Control-Allow-Credentials"] = "true"
-        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Auth-Token, X-Officer-Key, Accept"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Auth-Token, X-Officer-Key, Accept, X-Requested-With"
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, PUT, DELETE, OPTIONS"
+        resp.headers["Access-Control-Max-Age"] = "86400"
         return resp
 
 
@@ -123,7 +156,7 @@ def handle_options_preflight():
 def add_cors(resp):
     resp.headers["Access-Control-Allow-Origin"] = _get_allowed_origin()
     resp.headers["Access-Control-Allow-Credentials"] = "true"
-    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Auth-Token, X-Officer-Key, Accept"
+    resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Auth-Token, X-Officer-Key, Accept, X-Requested-With"
     resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PATCH, PUT, DELETE, OPTIONS"
     return resp
 
@@ -422,6 +455,8 @@ def config():
         "area": duhai.AREA_NAME,
         "center": duhai.CENTER,
         "bounds": duhai.BOUNDS,
+        "focalBounds": duhai.GHAZIABAD_DUHAI_BOUNDS,
+        "focalAreaName": duhai.FOCAL_AREA_NAME,
         "categories": urgency_ai.CATEGORIES,
         "wards": [w["name"] for w in notifier._load_wards()],
         "wardDetails": notifier._load_wards(),
@@ -455,7 +490,7 @@ def create_report():
         lng = num(data.get("lng"), "lng", -180, 180)
         if not duhai.inside(lat, lng):
             raise ValueError(
-                f"This location is outside the supported service boundary. SUDHARSARTHI currently serves the {duhai.AREA_NAME}."
+                f"Location ({lat:.4f}, {lng:.4f}) is outside the supported service boundary. SUDHARSARTHI accepts reports across India."
             )
         image_bytes, ext = read_image()
     except ValueError as exc:

@@ -193,7 +193,7 @@ class BackendTests(unittest.TestCase):
         self.assertEqual(c2_dash["stats"]["total"], 0)
         self.assertEqual(len(c2_dash["reports"]), 0)
 
-    # --- Boundary Validation (Ghaziabad Expanded Service Region)
+    # --- Boundary Validation (Nationwide India with Ghaziabad-Duhai Focus)
     def test_07_boundary_validation_inside_and_outside(self):
         # Inside original Duhai region -> Accepted
         r_duhai = self.c.post("/api/reports", json={
@@ -209,10 +209,17 @@ class BackendTests(unittest.TestCase):
         })
         self.assertEqual(r_ghaziabad.status_code, 201)
 
-        # Far outside service area (e.g., Delhi Airport or Lucknow) -> Rejected
-        r_out = self.c.post("/api/reports", json={
+        # Across India (e.g. Lucknow, Mumbai, Bengaluru) -> Accepted
+        r_lucknow = self.c.post("/api/reports", json={
             "category": "Pothole", "lat": 26.8467, "lng": 80.9462,  # Lucknow
-            "location": "Far Away City", "description": "Nowhere near Ghaziabad"
+            "location": "Hazratganj, Lucknow", "description": "Civic issue reported in state capital"
+        })
+        self.assertEqual(r_lucknow.status_code, 201)
+
+        # Outside India boundary (e.g., London) -> Rejected
+        r_out = self.c.post("/api/reports", json={
+            "category": "Pothole", "lat": 51.5074, "lng": -0.1278,  # London
+            "location": "Trafalgar Square, London", "description": "Outside supported national boundary"
         })
         self.assertEqual(r_out.status_code, 400)
         self.assertIn("outside", r_out.get_json()["error"].lower())

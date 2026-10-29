@@ -262,7 +262,8 @@ try:
     assert duhai.inside(28.6400, 77.3700)  # Indirapuram
     assert duhai.inside(28.6750, 77.3680)  # Mohan Nagar
     assert duhai.inside(28.7750, 77.5020)  # Muradnagar
-    assert not duhai.inside(26.8467, 80.9462) # Far away
+    assert duhai.inside(26.8467, 80.9462)  # Lucknow (All-India coverage)
+    assert not duhai.inside(51.5074, -0.1278)  # London (Outside national boundary)
     results["11. Verifying expanded map boundary on frontend and backend"] = "PASSED"
 except Exception as e:
     results["11. Verifying expanded map boundary on frontend and backend"] = f"FAILED: {e}"

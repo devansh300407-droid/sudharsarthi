@@ -35,12 +35,22 @@ def _load_wards():
         return []
 
 
-def nearest_ward(lat, lng):
-    """Ward whose centre is closest to the point (None if no ward table)."""
+def nearest_ward(lat, lng, max_dist_m=45000):
+    """Ward whose centre is closest to the point (or Regional Desk if beyond max_dist_m)."""
     wards = _load_wards()
     if not wards or lat is None or lng is None:
         return None
-    return min(wards, key=lambda w: haversine_m(lat, lng, w["lat"], w["lng"]))
+    closest = min(wards, key=lambda w: haversine_m(lat, lng, w["lat"], w["lng"]))
+    if max_dist_m is not None:
+        dist = haversine_m(lat, lng, closest["lat"], closest["lng"])
+        if dist > max_dist_m:
+            return {
+                "name": "General Municipal / Regional Desk",
+                "officer": "Municipal Regional Desk",
+                "email": os.environ.get("DEFAULT_OFFICER_EMAIL", "awasthishailendra59@gmail.com"),
+                "phone": "+91 120 279 0000"
+            }
+    return closest
 
 
 def officer_for(ward_name):

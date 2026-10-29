@@ -57,10 +57,13 @@ print(f"✓ All {len(shortcuts)} area shortcuts verified inside Ghaziabad & Duha
 
 # 3. Check boundary calculations (Backend & Frontend Agreement)
 s, w, n, e = duhai.BOUNDS
-assert s == 28.5800 and w == 77.3300 and n == 28.8200 and e == 77.5600
-print(f"✓ Authoritative service bounds verified: S={s}, W={w}, N={n}, E={e}")
+assert s == 6.0000 and w == 68.0000 and n == 38.0000 and e == 98.0000
+fs, fw, fn, fe = duhai.GHAZIABAD_DUHAI_BOUNDS
+assert fs == 28.5800 and fw == 77.3300 and fn == 28.8200 and fe == 77.5600
+print(f"✓ Authoritative nationwide bounds verified: S={s}, W={w}, N={n}, E={e}")
+print(f"✓ Municipal focal bounds verified: S={fs}, W={fw}, N={fn}, E={fe}")
 
-# Test points inside boundary
+# Test points inside nationwide boundary (including Ghaziabad, Duhai, and across India)
 inside_points = [
     (28.7285, 77.4740, "Duhai Station"),
     (28.6692, 77.4370, "Ghaziabad Central"),
@@ -69,25 +72,34 @@ inside_points = [
     (28.6750, 77.3680, "Mohan Nagar Junction"),
     (28.7750, 77.5020, "Muradnagar Canal"),
     (28.5900, 77.4000, "Crossings Republik"),
-    (28.8100, 77.5100, "Morta / Duhai North")
-]
-for lat, lng, name in inside_points:
-    assert duhai.inside(lat, lng), f"{name} should be INSIDE boundary"
-print(f"✓ {len(inside_points)} strategic points across Ghaziabad & Duhai confirmed INSIDE boundary")
-
-# Test points outside boundary
-outside_points = [
+    (28.8100, 77.5100, "Morta / Duhai North"),
     (26.8467, 80.9462, "Lucknow"),
     (28.5562, 77.1000, "Delhi Airport (IGI)"),
     (19.0760, 72.8777, "Mumbai"),
-    (28.9000, 77.4500, "North of Meerut boundary"),
-    (28.5000, 77.4500, "South of Noida boundary"),
-    (28.7000, 77.2500, "West of Delhi border"),
-    (28.7000, 77.7000, "East of Hapur boundary")
+    (12.9716, 77.5946, "Bengaluru")
+]
+for lat, lng, name in inside_points:
+    assert duhai.inside(lat, lng), f"{name} should be INSIDE nationwide boundary"
+print(f"✓ {len(inside_points)} strategic points across Ghaziabad, Duhai & India confirmed INSIDE boundary")
+
+# Test focal points check
+for lat, lng, name in inside_points[:8]:
+    assert duhai.is_focal_area(lat, lng), f"{name} should be inside focal cluster"
+assert not duhai.is_focal_area(26.8467, 80.9462), "Lucknow should be outside local focal cluster"
+print("✓ Focal area detection properly distinguishes local Ghaziabad cluster from nationwide locations")
+
+# Test points outside India boundary
+outside_points = [
+    (51.5074, -0.1278, "London"),
+    (40.7128, -74.0060, "New York"),
+    (-33.8688, 151.2093, "Sydney"),
+    (0.0000, 0.0000, "Null Island (Atlantic)"),
+    (45.0000, 77.4500, "Far North beyond Kashmir border"),
+    (-5.0000, 77.4500, "Far South beyond Indian Ocean")
 ]
 for lat, lng, name in outside_points:
     assert not duhai.inside(lat, lng), f"{name} should be OUTSIDE boundary"
-print(f"✓ {len(outside_points)} external points confirmed OUTSIDE boundary and rejected")
+print(f"✓ {len(outside_points)} international/external points confirmed OUTSIDE boundary and rejected")
 
 # 4. Test NaN and Infinity rejection
 assert not duhai.inside(float('nan'), 77.45), "NaN latitude was not rejected!"
@@ -101,7 +113,16 @@ r_nan = client.post("/api/reports", json={"category": "Pothole", "lat": "nan", "
 assert r_nan.status_code == 400
 assert "finite number" in r_nan.get_json()["error"] or "number" in r_nan.get_json()["error"]
 
-r_outside = client.post("/api/reports", json={"category": "Pothole", "lat": 26.8467, "lng": 80.9462})
+# Test location across India is accepted
+r_india = client.post("/api/reports", json={
+    "category": "Pothole", "lat": 26.8467, "lng": 80.9462,
+    "location": "Hazratganj, Lucknow", "description": "Road pothole in Lucknow"
+})
+assert r_india.status_code == 201
+print("✓ Nationwide reporting accepted: Lucknow report successfully created")
+
+# Test location outside India is rejected
+r_outside = client.post("/api/reports", json={"category": "Pothole", "lat": 51.5074, "lng": -0.1278})
 assert r_outside.status_code == 400
 assert "outside" in r_outside.get_json()["error"].lower()
 print("✓ Backend API successfully rejects NaN, Infinity, and out-of-boundary locations with 400 Bad Request")
